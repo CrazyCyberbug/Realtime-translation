@@ -12,8 +12,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, WhisperTokeni
 import subprocess
 
 import numpy as np
-from Translator import translate
-from Transcriber import wav2vec_transcribe
+from RealtimeTranslator.Translator import translate
+from RealtimeTranslator.Transcriber import wav2vec_transcribe
 
 audio_buffer = np.array([], dtype=np.float32)
 prev_buffer_size = 0
