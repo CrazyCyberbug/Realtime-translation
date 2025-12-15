@@ -71,9 +71,8 @@ def stream_transcribe(stream, new_chunk):
         else:
             stream = y
 
-        transcription = wav2vec_transcribe(stream[-10*16000:])
+        transcription, translation = stream_processer(y)
 
-        translation = translate(transcription)
         # transcription = f"dummy text: {sr}"
         end_time = time.time()
         latency = end_time - start_time
