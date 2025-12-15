@@ -1,0 +1,6 @@
+transformers
+scipy
+accelerate
+torchaudio
+torch
+indictranstoolkit
