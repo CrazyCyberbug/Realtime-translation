@@ -7,13 +7,25 @@ import scipy.io.wavfile
 import time
 import numpy as np
 import torchaudio
-import time
+
+from transformers import logging as hf_logging
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, WhisperTokenizer, pipeline
 import subprocess
-
+from IPython.display import clear_output
 import numpy as np
+import warnings
+
 from RealtimeTranslator.Translator import translate
 from RealtimeTranslator.Transcriber import transcribe
+
+# suppress warnings
+warnings.filterwarnings("ignore")
+hf_logging.set_verbosity_error()
+os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
+os.environ["GRADIO_LOG_LEVEL"] = "ERROR"
+
+
+
 
 audio_buffer = np.array([], dtype=np.float32)
 prev_buffer_size = 0
@@ -246,6 +258,15 @@ def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
     return demo
                
 def launch_app(share = True, debug = True):
+    print("Launching UI")
     reset_states()
     demo = setup_app()
-    demo.launch(share = share, debug = debug)
+    app, local_url, public_url = demo.launch(
+    share=True,
+    inline=False,
+    prevent_thread_lock=True
+    )
+    
+    clear_output(wait=True)
+    print("start-up complete!")
+    print("Public link:", public_url)

@@ -68,7 +68,7 @@ class WhisperTranscriber():
         
         
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(self.model_id,
-                                                               torch_dtype=torch_dtype,
+                                                               dtype=torch_dtype,
                                                                low_cpu_mem_usage=True,
                                                                use_safetensors=True
                                                             ).to(self.device)
@@ -80,7 +80,8 @@ class WhisperTranscriber():
             tokenizer=self.tokenizer,
             feature_extractor=self.processor.feature_extractor,
             chunk_length_s=10,
-            torch_dtype=torch_dtype,
+            dtype=torch_dtype,
+            ignore_warning=True,
             device=self.device
         )
         
