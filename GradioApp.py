@@ -139,7 +139,7 @@ def stream_transcribe(stream, new_chunk, tgt_lang):
 #         return previous_transcription, "Error"
        
 def clear():
-    return ""
+    return "", "", "0.0"
 
 def clear_state():
     return None
@@ -233,7 +233,7 @@ def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
 
         # Clear = reset + unlock dropdown
         clear_button.click(
-            clear_state,
+            lambda: (reset_states(), None)[1],
             outputs=[state]
         ).then(
             clear,
