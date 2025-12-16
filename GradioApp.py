@@ -41,7 +41,7 @@ LANG_MAP = {
 
 def reset_states():
     global audio_buffer, prev_buffer_size
-    global current_transcript, prev_transcript, full_transcript, 
+    global current_transcript, prev_transcript, full_transcript
     global prev_translation, current_translation, full_translation, translation_
     
     # audio artefacts
