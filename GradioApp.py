@@ -309,6 +309,8 @@ def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
             outputs=language_dropdown
         )
         
+    return demo
+        
         
 def launch_app(share = True, debug = True):
     reset_states()
