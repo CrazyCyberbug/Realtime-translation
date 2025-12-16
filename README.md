@@ -39,11 +39,8 @@ Only English ASR is enabled by default.
 While Indic-language speech recognition can be integrated using IndicConformer models, doing so requires NVIDIA NeMo, which significantly increases installation time and complexity—particularly in Colab environments. For this reason, Indic ASR is intentionally excluded from this demo.
 
 ## Demo
-<video width="800" controls autoplay loop>
-  <source src="assets/demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
 
+[▶ Watch Demo Video](https://drive.google.com/file/d/1bRr80mOyy8QOJiTdlCWQBenK9yj9Nfnj/view?usp=sharing)
 
 ## Known limitations
 
@@ -65,6 +62,7 @@ This project is meant as:
 - A reference for building streaming ASR + MT pipelines
 - A testbed for analyzing latency vs. quality trade-offs
 - A practical demonstration of real-time speech translation constraints
+
 
 
 
