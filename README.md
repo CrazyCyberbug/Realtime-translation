@@ -40,7 +40,9 @@ While Indic-language speech recognition can be integrated using IndicConformer m
 
 ## Demo
 
-[video]
+[Watch demo](assets/demo.mp4)
+
+
 
 ## Known limitations
 
