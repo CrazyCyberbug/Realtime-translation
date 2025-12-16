@@ -12,8 +12,8 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, WhisperTokeni
 import subprocess
 
 import numpy as np
-from RealtimeTranslator.Translator import translate
-from RealtimeTranslator.Transcriber import wav2vec_transcribe
+from Translator import translate
+from Transcriber import transcribe
 
 audio_buffer = np.array([], dtype=np.float32)
 prev_buffer_size = 0
@@ -22,7 +22,15 @@ prev_transcript = ""
 full_transcript = ""
 translation_ = ""
 
-
+LANG_MAP = {
+    "Hindi": "hin_Deva",
+    "Bengali": "ben_Beng",
+    "Tamil": "tam_Taml",
+    "Telugu": "tel_Telu",
+    "Marathi": "mar_Deva",
+    "Kannada": "kan_Knda",
+    "Malayalam": "mal_Mlym",
+}
 
 def reset_states():
   global audio_buffer, prev_buffer_size, current_transcript, prev_transcript, full_transcript, translation_
@@ -33,13 +41,13 @@ def reset_states():
   full_transcript = ""
   translation_ = ""
 
-def stream_processer(waveform):
+def stream_processer(waveform, use_whisper_turbo = True, tgt_lang = "hin_Deva"):
     global audio_buffer, prev_buffer_size, current_transcript, prev_transcript, full_transcript, translation_
     audio_buffer = np.append(audio_buffer, waveform)
 
     if len(audio_buffer) >= 2 * 16000:
-      transcript = wav2vec_transcribe(np.copy(audio_buffer))
-      translation_ = translate(transcript)
+      transcript = transcribe(waveform = np.copy(audio_buffer), use_whisper_turbo = use_whisper_turbo)
+      translation_ = translate(transcript, tgt_lang)
       current_transcript = prev_transcript + transcript
 
       if len(audio_buffer) >= 10 * 16000:
@@ -50,7 +58,7 @@ def stream_processer(waveform):
     print(f"contains {len(audio_buffer)/16000} seconds of audio")
     return current_transcript, translation_
 
-def stream_transcribe(stream, new_chunk):
+def stream_transcribe(stream, new_chunk, tgt_lang):
     global stream_record
     start_time = time.time()
     try:
@@ -71,7 +79,7 @@ def stream_transcribe(stream, new_chunk):
         else:
             stream = y
 
-        transcription, translation = stream_processer(y)
+        transcription, translation = stream_processer(y, use_whisper_turbo = True, tgt_lang = tgt_lang)
 
         # transcription = f"dummy text: {sr}"
         end_time = time.time()
@@ -82,23 +90,23 @@ def stream_transcribe(stream, new_chunk):
         print(f"Error during Transcription: {e}")
         return stream, e, "Error"
     
-def transcribe(inputs, previous_transcription):
-    start_time = time.time()
-    pipe = None
-    try:
-        filename = f"{uuid.uuid4().hex}.wav"
-        sample_rate, audio_data = inputs
-        scipy.io.wavfile.write(filename, sample_rate, audio_data)
+# def transcribe(inputs, previous_transcription):
+#     start_time = time.time()
+#     pipe = None
+#     try:
+#         filename = f"{uuid.uuid4().hex}.wav"
+#         sample_rate, audio_data = inputs
+#         scipy.io.wavfile.write(filename, sample_rate, audio_data)
 
-        transcription = pipe(filename)["text"]
-        previous_transcription += transcription
+#         transcription = pipe(filename)["text"]
+#         previous_transcription += transcription
 
-        end_time = time.time()
-        latency = end_time - start_time
-        return previous_transcription,  f"{latency:.2f}"
-    except Exception as e:
-        print(f"Error during Transcription: {e}")
-        return previous_transcription, "Error"
+#         end_time = time.time()
+#         latency = end_time - start_time
+#         return previous_transcription,  f"{latency:.2f}"
+#     except Exception as e:
+#         print(f"Error during Transcription: {e}")
+#         return previous_transcription, "Error"
        
 def clear():
     return ""
@@ -185,6 +193,109 @@ def setup_app():
         
     return demo
 
+
+# updated setup_app()
+
+def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
+    with gr.Blocks(css="""
+        #output-column {
+            height: 80vh;
+        }
+        .big-box textarea {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+    
+    """) as demo:
+
+        gr.Markdown(
+            f"""
+                # 🎙️ Realtime Transcription & Translation
+
+                Using **{MODEL_NAME}**
+                First token may take ~5s, after that it's real-time.
+            """
+        )
+
+        with gr.Row(equal_height=True):
+
+            # 🎛️ Controls (small)
+            with gr.Column(scale=1):
+                input_audio_microphone = gr.Audio(
+                    streaming=True,
+                    label="Microphone"
+                )
+
+                language_dropdown = gr.Dropdown(
+                    choices=list(LANG_MAP.keys()),
+                    value="Hindi",
+                    label="Source Language",
+                    interactive=True
+                )
+
+                latency_textbox = gr.Textbox(
+                    label="Latency (seconds)",
+                    value="0.0",
+                    interactive=False
+                )
+
+                clear_button = gr.Button("Clear Output")
+
+            # 📄 Outputs (BIG – 80%)
+            with gr.Column(scale=4, elem_id="output-column"):
+
+                output = gr.Textbox(
+                    label="📝 Transcription",
+                    value="",
+                    lines=12,
+                    max_lines=12,
+                    elem_classes="big-box"
+                )
+
+                translation_output = gr.Textbox(
+                    label="🌍 Translation",
+                    value="",
+                    lines=12,
+                    max_lines=12,
+                    elem_classes="big-box"
+                )
+
+        state = gr.State()
+        tgt_lang_state = gr.State("hin_Deva")
+
+        # Update source language ONLY when stream is off
+        language_dropdown.change(
+            lambda lang: LANG_MAP[lang],
+            inputs=language_dropdown,
+            outputs=tgt_lang_state
+        )
+
+        # Streaming: lock language dropdown
+        input_audio_microphone.stream(
+            stream_transcribe,
+            inputs=[state, input_audio_microphone, tgt_lang_state],
+            outputs=[state, output, translation_output, latency_textbox],
+            time_limit=None,
+            stream_every=2,
+            concurrency_limit=None
+        ).then(
+            lambda: gr.update(interactive=False),
+            outputs=language_dropdown
+        )
+
+        # Clear = reset + unlock dropdown
+        clear_button.click(
+            clear_state,
+            outputs=[state]
+        ).then(
+            clear,
+            outputs=[output, translation_output, latency_textbox]
+        ).then(
+            lambda: gr.update(interactive=True),
+            outputs=language_dropdown
+        )
+        
+        
 def launch_app(share = True, debug = True):
     reset_states()
     demo = setup_app()
