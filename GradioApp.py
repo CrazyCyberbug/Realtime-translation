@@ -30,26 +30,40 @@ current_translation = ""
 full_translation = ""
 
 LANG_MAP = {
-    "Hindi": "hin_Deva",
     "Bengali": "ben_Beng",
-    "Tamil": "tam_Taml",
-    "Telugu": "tel_Telu",
-    "Marathi": "mar_Deva",
+    "Hindi": "hin_Deva",
     "Kannada": "kan_Knda",
     "Malayalam": "mal_Mlym",
+    "Marathi": "mar_Deva",
+    "Tamil": "tam_Taml",
+    "Telugu": "tel_Telu",   
 }
 
 def reset_states():
-  global audio_buffer, prev_buffer_size, current_transcript, prev_transcript, full_transcript, translation_
-  audio_buffer = np.array([], dtype=np.float32)
-  prev_buffer_size = 0
-  current_transcript = ""
-  prev_transcript = ""
-  full_transcript = ""
-  translation_ = ""
+    global audio_buffer, prev_buffer_size
+    global current_transcript, prev_transcript, full_transcript, 
+    global prev_translation, current_translation, full_translation, translation_
+    
+    # audio artefacts
+    audio_buffer = np.array([], dtype=np.float32)
+    prev_buffer_size = 0
+    
+    # transcription artefacts
+    current_transcript = ""
+    prev_transcript = ""
+    full_transcript = ""
+    
+    # translation artefacts
+    prev_translation = ""
+    current_translation = ""
+    full_translation = ""
 
 def stream_processer(waveform, use_whisper_turbo = True, tgt_lang = "hin_Deva"):
-    global audio_buffer, prev_buffer_size, current_transcript, prev_transcript, full_transcript, translation_
+    
+    global audio_buffer, prev_buffer_size
+    global current_transcript, prev_transcript, full_transcript
+    global prev_translation, current_translation, full_translation
+    
     audio_buffer = np.append(audio_buffer, waveform)
 
     if len(audio_buffer) >= 2 * 16000:
@@ -130,86 +144,6 @@ def clear():
 def clear_state():
     return None
 
-# def setup_app():
-    
-#     with gr.Blocks(css="""
-#     #output-column {
-#         height: 80vh;
-#     }
-#     .big-box textarea {
-#         font-size: 16px;
-#         line-height: 1.5;
-#     }
-#     """) as demo:
-
-#         gr.Markdown(
-#             f"""
-#     # 🎙️ Realtime Transcription & Translation
-
-#     Using **{"wav2vec"}**
-#     First token may take ~5s, after that it's real-time.
-#     """
-#         )
-
-#         with gr.Row(equal_height=True):
-
-#             # 🎛️ Controls (small)
-#             with gr.Column(scale=1):
-#                 input_audio_microphone = gr.Audio(
-#                     streaming=True,
-#                     label="Microphone"
-#                 )
-
-#                 latency_textbox = gr.Textbox(
-#                     label="Latency (seconds)",
-#                     value="0.0",
-#                     interactive=False
-#                 )
-
-#                 clear_button = gr.Button("Clear Output")
-
-#             # 📄 Outputs (BIG – 80%)
-#             with gr.Column(scale=4, elem_id="output-column"):
-
-#                 output = gr.Textbox(
-#                     label="📝 Transcription",
-#                     value="",
-#                     lines=12,
-#                     max_lines=12,
-#                     elem_classes="big-box"
-#                 )
-
-#                 translation_output = gr.Textbox(
-#                     label="🌍 Translation",
-#                     value="",
-#                     lines=12,
-#                     max_lines=12,
-#                     elem_classes="big-box"
-#                 )
-
-#         state = gr.State()
-
-
-#         input_audio_microphone.stream(
-#             stream_transcribe,
-#             inputs=[state, input_audio_microphone],
-#             outputs=[state, output, translation_output, latency_textbox],
-#             time_limit=30,
-#             stream_every=2,
-#             concurrency_limit=None
-#         )
-
-#         clear_button.click(
-#             clear_state,
-#             outputs=[state]
-#         ).then(
-#             clear,
-#             outputs=[output, translation_output, latency_textbox]
-#         )
-        
-#     return demo
-
-# updated setup_app()
 def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
     with gr.Blocks(css="""
         #output-column {
@@ -310,8 +244,7 @@ def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
         )
         
     return demo
-        
-        
+               
 def launch_app(share = True, debug = True):
     reset_states()
     demo = setup_app()
