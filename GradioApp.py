@@ -12,15 +12,22 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, WhisperTokeni
 import subprocess
 
 import numpy as np
-from Translator import translate
-from Transcriber import transcribe
+from RealtimeTranslator.Translator import translate
+from RealtimeTranslator.Transcriber import transcribe
 
 audio_buffer = np.array([], dtype=np.float32)
 prev_buffer_size = 0
+
+# transcription artefacts
 current_transcript = ""
 prev_transcript = ""
 full_transcript = ""
+
+# translation artefacts
 translation_ = ""
+prev_translation = ""
+current_translation = ""
+full_translation = ""
 
 LANG_MAP = {
     "Hindi": "hin_Deva",
@@ -46,17 +53,26 @@ def stream_processer(waveform, use_whisper_turbo = True, tgt_lang = "hin_Deva"):
     audio_buffer = np.append(audio_buffer, waveform)
 
     if len(audio_buffer) >= 2 * 16000:
-      transcript = transcribe(waveform = np.copy(audio_buffer), use_whisper_turbo = use_whisper_turbo)
+      if use_whisper_turbo:
+        transcript = transcribe(np.copy(audio_buffer), use_whisper_turbo=True)
+
+      else:
+        transcript = transcribe(np.copy(audio_buffer), use_whisper_turbo=False)
+
       translation_ = translate(transcript, tgt_lang)
+
+
       current_transcript = prev_transcript + transcript
+      current_translation = prev_translation + translation_
 
       if len(audio_buffer) >= 10 * 16000:
         audio_buffer  = audio_buffer[prev_buffer_size:]
         prev_transcript = current_transcript
+        prev_translation = current_translation
 
     prev_buffer_size = len(audio_buffer)
     print(f"contains {len(audio_buffer)/16000} seconds of audio")
-    return current_transcript, translation_
+    return current_transcript, current_translation
 
 def stream_transcribe(stream, new_chunk, tgt_lang):
     global stream_record
@@ -114,88 +130,86 @@ def clear():
 def clear_state():
     return None
 
-def setup_app():
+# def setup_app():
     
-    with gr.Blocks(css="""
-    #output-column {
-        height: 80vh;
-    }
-    .big-box textarea {
-        font-size: 16px;
-        line-height: 1.5;
-    }
-    """) as demo:
+#     with gr.Blocks(css="""
+#     #output-column {
+#         height: 80vh;
+#     }
+#     .big-box textarea {
+#         font-size: 16px;
+#         line-height: 1.5;
+#     }
+#     """) as demo:
 
-        gr.Markdown(
-            f"""
-    # 🎙️ Realtime Transcription & Translation
+#         gr.Markdown(
+#             f"""
+#     # 🎙️ Realtime Transcription & Translation
 
-    Using **{"wav2vec"}**
-    First token may take ~5s, after that it's real-time.
-    """
-        )
+#     Using **{"wav2vec"}**
+#     First token may take ~5s, after that it's real-time.
+#     """
+#         )
 
-        with gr.Row(equal_height=True):
+#         with gr.Row(equal_height=True):
 
-            # 🎛️ Controls (small)
-            with gr.Column(scale=1):
-                input_audio_microphone = gr.Audio(
-                    streaming=True,
-                    label="Microphone"
-                )
+#             # 🎛️ Controls (small)
+#             with gr.Column(scale=1):
+#                 input_audio_microphone = gr.Audio(
+#                     streaming=True,
+#                     label="Microphone"
+#                 )
 
-                latency_textbox = gr.Textbox(
-                    label="Latency (seconds)",
-                    value="0.0",
-                    interactive=False
-                )
+#                 latency_textbox = gr.Textbox(
+#                     label="Latency (seconds)",
+#                     value="0.0",
+#                     interactive=False
+#                 )
 
-                clear_button = gr.Button("Clear Output")
+#                 clear_button = gr.Button("Clear Output")
 
-            # 📄 Outputs (BIG – 80%)
-            with gr.Column(scale=4, elem_id="output-column"):
+#             # 📄 Outputs (BIG – 80%)
+#             with gr.Column(scale=4, elem_id="output-column"):
 
-                output = gr.Textbox(
-                    label="📝 Transcription",
-                    value="",
-                    lines=12,
-                    max_lines=12,
-                    elem_classes="big-box"
-                )
+#                 output = gr.Textbox(
+#                     label="📝 Transcription",
+#                     value="",
+#                     lines=12,
+#                     max_lines=12,
+#                     elem_classes="big-box"
+#                 )
 
-                translation_output = gr.Textbox(
-                    label="🌍 Translation",
-                    value="",
-                    lines=12,
-                    max_lines=12,
-                    elem_classes="big-box"
-                )
+#                 translation_output = gr.Textbox(
+#                     label="🌍 Translation",
+#                     value="",
+#                     lines=12,
+#                     max_lines=12,
+#                     elem_classes="big-box"
+#                 )
 
-        state = gr.State()
+#         state = gr.State()
 
 
-        input_audio_microphone.stream(
-            stream_transcribe,
-            inputs=[state, input_audio_microphone],
-            outputs=[state, output, translation_output, latency_textbox],
-            time_limit=30,
-            stream_every=2,
-            concurrency_limit=None
-        )
+#         input_audio_microphone.stream(
+#             stream_transcribe,
+#             inputs=[state, input_audio_microphone],
+#             outputs=[state, output, translation_output, latency_textbox],
+#             time_limit=30,
+#             stream_every=2,
+#             concurrency_limit=None
+#         )
 
-        clear_button.click(
-            clear_state,
-            outputs=[state]
-        ).then(
-            clear,
-            outputs=[output, translation_output, latency_textbox]
-        )
+#         clear_button.click(
+#             clear_state,
+#             outputs=[state]
+#         ).then(
+#             clear,
+#             outputs=[output, translation_output, latency_textbox]
+#         )
         
-    return demo
-
+#     return demo
 
 # updated setup_app()
-
 def setup_app(MODEL_NAME = "Openai/Whisper-large-v3-turbo"):
     with gr.Blocks(css="""
         #output-column {

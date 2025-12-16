@@ -29,8 +29,8 @@ class Translator():
 
         self.ip = IndicProcessor(inference=True)
         
-    def translate(self, text):
-        src_lang, tgt_lang = "eng_Latn", "hin_Deva"
+    def translate(self, text, tgt_lang):
+        src_lang, tgt_lang = "eng_Latn", tgt_lang
         
         # preprocess and tokenize
         batch = self.ip.preprocess_batch([text,], src_lang=src_lang, tgt_lang=tgt_lang)
@@ -62,8 +62,8 @@ class Translator():
         
         
 translator = Translator()
-def translate(text):
-    translations = translator.translate(text)[0]
+def translate(text, tgt_lang = "hin_Deva"):
+    translations = translator.translate(text, tgt_lang)[0]
     return translations
         
         
