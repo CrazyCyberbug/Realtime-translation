@@ -92,7 +92,9 @@ class WhisperTranscriber():
 
 
 whisper_transcriber = WhisperTranscriber()
-wav2vec_transcriber = Wav2vec2Transcriber() 
+# wav2vec_transcriber = Wav2vec2Transcriber()
+wav2vec_transcriber = None
+ 
 
 def transcribe(waveform, use_whisper_turbo = True):
     if use_whisper_turbo:
