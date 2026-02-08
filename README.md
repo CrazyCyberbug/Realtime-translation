@@ -8,6 +8,10 @@ This repository contains a minimal real-time speech translation pipeline built u
 
 The application is implemented as a Gradio app and is intended to be run from a Google Colab notebook for ease of reproduction.
 
+
+## Demo
+https://github.com/user-attachments/assets/3eebd6f3-0f51-4af8-8e08-df0b59619135
+
 ## System overview
 
 At a high level, the system works as follows:
@@ -62,6 +66,7 @@ This project is meant as:
 - A reference for building streaming ASR + MT pipelines
 - A testbed for analyzing latency vs. quality trade-offs
 - A practical demonstration of real-time speech translation constraints
+
 
 
 
